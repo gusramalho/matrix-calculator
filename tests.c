@@ -11,6 +11,22 @@ void test_new_matrix() {
     delete_matrix(m);
 }
 
+void test_matrix_get_and_set() {
+    Matrix *m = new_matrix(2, 2).value;
+
+    matrix_set(m, 1, 1, 30);
+    matrix_set(m, 1, 2, 20);
+    matrix_set(m, 2, 1, 1);
+    matrix_set(m, 2, 2, 2);
+    
+    assert(30 == matrix_get(m, 1, 1).value);
+    assert(20 == matrix_get(m, 1, 2).value);
+    assert(1 == matrix_get(m, 2, 1).value);
+    assert(2 == matrix_get(m, 2, 2).value);
+
+    delete_matrix(m);
+}
+
 void test_new_matrix_with_values() {
     double values[3][3] = { 
         {1, 2, 3}, 
@@ -279,6 +295,7 @@ void test_determinant_6x6() {
 
 int main() {
     test_new_matrix();
+    test_matrix_get_and_set();
     test_new_matrix_with_values();
     test_new_identity_matrix();
     test_transpose_matrix();
