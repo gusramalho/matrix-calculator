@@ -3,8 +3,9 @@
 #include "matrix.h"
 #include <stdlib.h>
 #include <ctype.h>
+#include <time.h>
 
-#define FILE_READER_BUFFER_SIZE 255
+#define FILE_READER_BUFFER_SIZE 1000
 
 typedef enum MatrixOperationType {
   SUM,
@@ -29,7 +30,39 @@ char OPERATIONS[5][20] = {
   "--transpose"
 };
 
-void read_matrix_row(
+void print_matrix_error(MatrixResultCode code) {
+  switch (code) {
+    case MATRIX_DIMENSIONS_MUST_BE_POSITIVE:
+      printf("Validation failed: Matrix dimensions must be greater than 0.");
+      break;
+    case MATRIX_INDEX_ARGUMENT_OUT_OF_BOUNDS:
+      printf("Error: Index out of bounds.");
+      break;
+    case MATRIX_ARGUMENTS_MUST_NOT_BE_NULL:
+      printf("Error: Matrix should not be null.");
+      break;
+    case MATRIX_DIMENSIONS_MUST_BE_EQUALS_TO_SUM:
+      printf("Validation failed: Matrices must have the same dimensions to calculate the sum.");
+      break;
+    case MATRIX_DIMENSIONS_MUST_BE_EQUALS_TO_SUBTRACT:
+      printf("Validation failed: Matrices must have the same dimensions to calculate the subtract.");
+      break;
+    case MATRIX_INVALID_DIMENSIONS_TO_MULTIPLY:
+      printf("Validation failed: Invalid dimensions for calculating multiplication.");
+      break;
+    case MATRIX_SHOULD_BE_SQUARE_TO_CALC_DETERMINANT:
+      printf("Validation failed: Matrix should be square to calculate the determinant.");
+      break;
+    case MATRIX_INTERNAL_ERROR:
+      printf("Error: Unexpected error occurred.");
+      break;
+    default:
+      printf("Error: Unexpected error occurred.");
+      break;
+  }
+}
+
+int read_matrix_row(
   char* buffer,
   Matrix *matrix,
   int row
@@ -47,7 +80,12 @@ void read_matrix_row(
       strcpy(current_number, "");
       current_number_idx = 0;
       col++;
-    } else if (isdigit(buffer[i]) || buffer[i] == '.') {
+
+      if (col > matrix->cols) {
+        printf("Invalid file format: Invalid number of columns in matrix row %d. Expected: %d\n", row, matrix->cols);
+        return 0;
+      }
+    } else if (isdigit(buffer[i]) || buffer[i] == '.' || buffer[i] == '-') {
       current_number[current_number_idx] = buffer[i];
       current_number_idx++;
     }
@@ -59,6 +97,8 @@ void read_matrix_row(
 
       matrix_set(matrix, row + 1, col + 1, number);
   }
+
+  return 1;
 }
 
 int read_matrix_from_file(Matrix *m, char* filename) {
@@ -67,7 +107,10 @@ int read_matrix_from_file(Matrix *m, char* filename) {
 
   FILE *file = fopen(filename, "r");
 
-  if (file == NULL) return -1;
+  if (file == NULL) {
+    printf("Error: Failed to open file %s", filename);
+    return 0;
+  } 
 
   char *row_line = fgets(buffer, FILE_READER_BUFFER_SIZE, file);
   int rows = atoi(row_line);
@@ -78,7 +121,8 @@ int read_matrix_from_file(Matrix *m, char* filename) {
   MatrixResult matrix_result = new_matrix(rows, cols);
 
   if (!matrix_result.success) {
-    return -1;
+    print_matrix_error(matrix_result.code);
+    return 0;
   }
   
   Matrix *matrix = matrix_result.value;
@@ -86,14 +130,22 @@ int read_matrix_from_file(Matrix *m, char* filename) {
   int row = 0;
 
   while (fgets(buffer, FILE_READER_BUFFER_SIZE, file) != NULL) {
-    read_matrix_row(buffer, matrix, row);
+    if (!read_matrix_row(buffer, matrix, row)) {
+      printf("Error: Failed to parse matrix row %d of file %s", row, filename);
+      return 0;
+    };
     row++;
+  }
+
+  if (row != rows) {
+    printf("Invalid file format: Matrix should have %d rows.", rows);
+    return 0;
   }
 
   fclose(file);
   *m = *matrix;
 
-  return 0;
+  return 1;
 }
 
 void write_matrix_to_file(Matrix *m, char *filename) {
@@ -124,7 +176,7 @@ void print_matrix(Matrix *m) {
       printf("%.2lf", matrix_get(m, i + 1, j + 1).value);
 
       if (j < m->cols - 1) {
-        printf(",");
+        printf(", ");
       }
     }
     printf("\n");
@@ -141,6 +193,22 @@ MatrixOperationType parse_operation_type(char* operation) {
   return INVALID_OPERATION;
 }
 
+int output_matrix_result(
+  MatrixResult result,
+  char *output_filename
+) {
+    if (result.success) {
+      if (output_filename != NULL) {
+        write_matrix_to_file(result.value, output_filename);
+        printf("Success: Resulting matrix was saved to file '%s'.", output_filename);
+      } else {
+        print_matrix(result.value);
+      }
+    } else {
+      print_matrix_error(result.code);
+    }
+}
+
 void main(int argc, char* argv[]) {
   if (argv[1] == NULL) {
     printf("No operation was requested.");
@@ -155,44 +223,51 @@ void main(int argc, char* argv[]) {
   }
 
   Matrix a, b;
+  int read_a_file_result, read_b_file_result;
   MatrixNumericResult numeric_result;
   MatrixResult r;
 
   switch (operation_type) {
     case SUM:
-      read_matrix_from_file(&a, argv[2]);
-      read_matrix_from_file(&b, argv[3]);
-      r = matrix_sum(&a, &b);
-      write_matrix_to_file(r.value, argv[4]);
+      if (!read_matrix_from_file(&a, argv[2])) return;
+      if (!read_matrix_from_file(&b, argv[3])) return;
+
+      output_matrix_result(matrix_sum(&a, &b), argv[4]);
 
       break;
     case SUBTRACT:
-      read_matrix_from_file(&a, argv[2]);
-      read_matrix_from_file(&b, argv[3]);
-      r = matrix_subtract(&a, &b);
-      write_matrix_to_file(r.value, argv[4]);
+      if (!read_matrix_from_file(&a, argv[2])) return;
+      if (!read_matrix_from_file(&b, argv[3])) return;
+
+      output_matrix_result(matrix_subtract(&a, &b), argv[4]);
 
       break;
     case MULTIPLY:
-      read_matrix_from_file(&a, argv[2]);
-      read_matrix_from_file(&b, argv[3]);
-      r = matrix_multiply(&a, &b);
-      write_matrix_to_file(r.value, argv[4]);
+      if (!read_matrix_from_file(&a, argv[2])) return;
+      if (!read_matrix_from_file(&b, argv[3])) return;
+      
+      output_matrix_result(matrix_multiply(&a, &b), argv[4]);
 
       break;
     case TRANSPOSE:
-      read_matrix_from_file(&a, argv[2]);
-      r = matrix_transpose(&a);
-      write_matrix_to_file(r.value, argv[3]);
+      if (!read_matrix_from_file(&a, argv[2])) return;
+
+      output_matrix_result(matrix_transpose(&a), argv[3]);
 
       break;
     case DET:
-      read_matrix_from_file(&a, argv[2]);
+      if (!read_matrix_from_file(&a, argv[2])) return;
+
       numeric_result = matrix_determinant(&a);
-      printf("det = %lf", numeric_result.value);
+
+      if (numeric_result.success) {
+        printf("det = %lf", numeric_result.value);
+      } else {
+        print_matrix_error(numeric_result.code);
+      }
 
       break;
-  default:
-    break;
+    default:
+      break;
   }
 }
