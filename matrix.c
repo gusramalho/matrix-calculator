@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include "matrix.h"
 
 MatrixNumericResult _build_numeric_result(MatrixResultCode code, double value) {
@@ -322,25 +323,32 @@ MatrixNumericResult matrix_determinant_lu_decomposition(Matrix *m) {
 
     Matrix *copy = matrix_copy(m);
 
+    int p = 1;
+
     for (int k = 0; k < m->rows - 1; k++) {
-        double ref = _get(copy, k, k);
+        double max = fabs(_get(copy, k, k));
+        int max_idx = k;
 
-        if (ref == 0) {
-            int col = k + 1;
-
-            for (col; col < m->cols; col++) {
-                if (_get(copy, k, col) != 0) {
-                    ref = _get(copy, k, col);
-                    break;
-                }
-            }
-
-            if (ref == 0) return _succeeded_numeric_result(0);
-
-            for (int row = 0; row < copy->rows; row++) {
-                _set(copy, row, k, _get(copy, row, k) + _get(copy, row, col));
+        for (int row = k + 1; row < copy->rows; row++) {
+            double current_value = fabs(_get(copy, row, k));
+            if (current_value > max) {
+                max = current_value;
+                max_idx = row;
             }
         }
+
+        if (k != max_idx) {
+            p *= -1;
+            for (int col = 0; col < copy->cols; col++) {
+                double temp = _get(copy, k, col);
+                _set(copy, k, col, _get(copy, max_idx, col));
+                _set(copy, max_idx, col, temp);
+            }
+        }
+
+        double ref = _get(copy, k, k);
+
+        if (ref == 0) return _succeeded_numeric_result(0);
 
         for (int i = k + 1; i < m->rows; i++) {
             double value_to_set_zero = _get(copy, i, k);
@@ -360,7 +368,7 @@ MatrixNumericResult matrix_determinant_lu_decomposition(Matrix *m) {
         det *= _get(copy, i, i );
     }
 
-    return _succeeded_numeric_result(det);
+    return _succeeded_numeric_result(det * p);
 }
 
 void delete_matrix(Matrix *m) {
