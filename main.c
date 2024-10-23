@@ -7,6 +7,8 @@
 
 #define FILE_READER_BUFFER_SIZE 1000
 
+#define OPERATIONS_SIZE 7
+
 typedef enum MatrixOperationType {
   SUM,
   SUBTRACT,
@@ -24,7 +26,7 @@ typedef struct MatrixOperation {
   MatrixOperationType operator;
 } MatrixOperation;
 
-char OPERATIONS[7][20] = {
+char OPERATIONS[OPERATIONS_SIZE][20] = {
   "--sum",
   "--subtract",
   "--multiply",
@@ -188,7 +190,7 @@ void print_matrix(Matrix *m) {
 }
 
 MatrixOperationType parse_operation_type(char* operation) {
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < OPERATIONS_SIZE; i++) {
     if (strcmp(OPERATIONS[i], operation) == 0) {
       return i;
     }
@@ -214,6 +216,10 @@ int output_matrix_result(
     }
 
     printf("\nCalculation time: %lfs", execution_time);
+}
+
+double calc_execution_time(clock_t begin, clock_t end) {
+  return (double)(end - begin) / CLOCKS_PER_SEC;
 }
 
 void main(int argc, char* argv[]) {
@@ -245,7 +251,7 @@ void main(int argc, char* argv[]) {
       begin = clock();
       r = matrix_sum(&a, &b);
       end = clock();
-      execution_time = (double)(end - begin) / CLOCKS_PER_SEC;
+      execution_time = calc_execution_time(begin, end);
 
       output_matrix_result(r, argv[4], execution_time);
 
@@ -257,7 +263,7 @@ void main(int argc, char* argv[]) {
       begin = clock();
       r = matrix_subtract(&a, &b);
       end = clock();
-      execution_time = (double)(end - begin) / CLOCKS_PER_SEC;
+      execution_time = calc_execution_time(begin, end);
 
       output_matrix_result(r, argv[4], execution_time);
 
@@ -269,7 +275,7 @@ void main(int argc, char* argv[]) {
       begin = clock();
       r = matrix_multiply(&a, &b);
       end = clock();
-      execution_time = (double)(end - begin) / CLOCKS_PER_SEC;
+      execution_time = calc_execution_time(begin, end);
 
       output_matrix_result(r, argv[4], execution_time);
 
@@ -280,7 +286,7 @@ void main(int argc, char* argv[]) {
       begin = clock();
       r = matrix_transpose(&a);
       end = clock();
-      execution_time = (double)(end - begin) / CLOCKS_PER_SEC;
+      execution_time = calc_execution_time(begin, end);
 
       output_matrix_result(r, argv[3], execution_time);
 
@@ -292,7 +298,7 @@ void main(int argc, char* argv[]) {
       begin = clock();
       numeric_result = matrix_determinant_lu_decomposition(&a);
       end = clock();
-      execution_time = (double)(end - begin) / CLOCKS_PER_SEC;
+      execution_time = calc_execution_time(begin, end);
 
       if (numeric_result.success) {
         printf("det = %lf\n", numeric_result.value);
@@ -308,7 +314,7 @@ void main(int argc, char* argv[]) {
       begin = clock();
       numeric_result = matrix_determinant_laplace(&a);
       end = clock();
-      execution_time = (double)(end - begin) / CLOCKS_PER_SEC;
+      execution_time = calc_execution_time(begin, end);
 
       if (numeric_result.success) {
         printf("det = %lf\n", numeric_result.value);
