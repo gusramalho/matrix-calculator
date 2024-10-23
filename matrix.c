@@ -255,18 +255,22 @@ Matrix* _new_complementary_matrix(Matrix *m, int row_to_remove, int col_to_remov
 }
 
 
-MatrixNumericResult matrix_determinant(Matrix *m) {
+MatrixNumericResult matrix_determinant_laplace(Matrix *m) {
     if (m == NULL) return _failed_numeric_result(MATRIX_ARGUMENTS_MUST_NOT_BE_NULL);
 
     if (m->rows != m->cols) {
         return _failed_numeric_result(MATRIX_SHOULD_BE_SQUARE_TO_CALC_DETERMINANT);
     }
 
-    if (m->rows == 2 && m->cols == 2) {
+    if (m->rows == 1) {
+        return _succeeded_numeric_result(_get(m, 0, 0));
+    }
+
+    if (m->rows == 2) {
         return _determinant_2x2(m);
     }
 
-    if (m->rows == 3 && m->cols == 3) {
+    if (m->rows == 3) {
         return _determinant_3x3(m);
     }
 
@@ -277,7 +281,7 @@ MatrixNumericResult matrix_determinant(Matrix *m) {
 
         if (current_value != 0) {
             Matrix *complement = _new_complementary_matrix(m, i, 0);
-            MatrixNumericResult complement_det = matrix_determinant(complement);
+            MatrixNumericResult complement_det = matrix_determinant_laplace(complement);
 
             if (!complement_det.success) {
                 return _failed_numeric_result(MATRIX_INTERNAL_ERROR);
@@ -289,6 +293,74 @@ MatrixNumericResult matrix_determinant(Matrix *m) {
     }
 
     return _succeeded_numeric_result(result);
+}
+
+Matrix* matrix_copy(Matrix *m) {
+    if (m == NULL) return NULL;
+
+    Matrix *copy = new_matrix(m->rows, m->cols).value;
+
+    for (int i = 0; i < m->rows; i++) {
+        for (int j = 0; j < m-> cols; j++) {
+            _set(copy, i, j, _get(m, i, j));
+        }
+    }
+
+    return copy;
+}
+
+MatrixNumericResult matrix_determinant_lu_decomposition(Matrix *m) {
+    if (m == NULL) return _failed_numeric_result(MATRIX_ARGUMENTS_MUST_NOT_BE_NULL);
+
+    if (m->rows != m->cols) {
+        return _failed_numeric_result(MATRIX_SHOULD_BE_SQUARE_TO_CALC_DETERMINANT);
+    }
+
+    if (m->rows == 1) {
+        return _succeeded_numeric_result(_get(m, 0, 0));
+    }
+
+    Matrix *copy = matrix_copy(m);
+
+    for (int k = 0; k < m->rows - 1; k++) {
+        double ref = _get(copy, k, k);
+
+        if (ref == 0) {
+            int col = k + 1;
+
+            for (col; col < m->cols; col++) {
+                if (_get(copy, k, col) != 0) {
+                    ref = _get(copy, k, col);
+                    break;
+                }
+            }
+
+            if (ref == 0) return _succeeded_numeric_result(0);
+
+            for (int row = 0; row < copy->rows; row++) {
+                _set(copy, row, k, _get(copy, row, k) + _get(copy, row, col));
+            }
+        }
+
+        for (int i = k + 1; i < m->rows; i++) {
+            double value_to_set_zero = _get(copy, i, k);
+
+            if (value_to_set_zero != 0) {
+                double f = value_to_set_zero / ref * -1;
+                for (int j = 0; j < m->cols; j++) {
+                    _set(copy, i, j, _get(copy, i, j) + _get(copy, k, j) * f);
+                }
+            }
+        }
+    }
+
+    double det = 1;
+
+    for (int i = 0; i < copy->rows; i++) {
+        det *= _get(copy, i, i );
+    }
+
+    return _succeeded_numeric_result(det);
 }
 
 void delete_matrix(Matrix *m) {

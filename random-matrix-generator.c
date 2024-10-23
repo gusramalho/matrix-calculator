@@ -32,10 +32,8 @@ int random_int() {
 }
 
 void main(int argc, char* argv[]) {
-  int size = atoi(argv[1]);
-
-  int rows = size;
-  int cols = size;
+  int rows = atoi(argv[1]);
+  int cols = atoi(argv[2]);
 
   Matrix *m = new_matrix(rows, cols).value;
 
@@ -47,7 +45,7 @@ void main(int argc, char* argv[]) {
 
   char filename[50] = "";
 
-  sprintf(filename, "test-matrix-%dx%d.mat", size);
+  sprintf(filename, "test-matrix-%dx%d.mat", rows, cols);
 
   write_matrix_to_file(m, filename);
 }

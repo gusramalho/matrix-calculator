@@ -12,6 +12,8 @@ typedef enum MatrixOperationType {
   SUBTRACT,
   MULTIPLY,
   DET,
+  DET_LAPLACE,
+  DET_LU_DEC,
   TRANSPOSE,
   INVALID_OPERATION
 } MatrixOperationType;
@@ -22,11 +24,13 @@ typedef struct MatrixOperation {
   MatrixOperationType operator;
 } MatrixOperation;
 
-char OPERATIONS[5][20] = {
+char OPERATIONS[7][20] = {
   "--sum",
   "--subtract",
   "--multiply",
   "--det",
+  "--det-laplace",
+  "--det-lu-dec",
   "--transpose"
 };
 
@@ -195,7 +199,8 @@ MatrixOperationType parse_operation_type(char* operation) {
 
 int output_matrix_result(
   MatrixResult result,
-  char *output_filename
+  char *output_filename,
+  double execution_time
 ) {
     if (result.success) {
       if (output_filename != NULL) {
@@ -207,6 +212,8 @@ int output_matrix_result(
     } else {
       print_matrix_error(result.code);
     }
+
+    printf("\nCalculation time: %lfs", execution_time);
 }
 
 void main(int argc, char* argv[]) {
@@ -227,41 +234,85 @@ void main(int argc, char* argv[]) {
   MatrixNumericResult numeric_result;
   MatrixResult r;
 
+  clock_t begin, end;
+  double execution_time;
+
   switch (operation_type) {
     case SUM:
       if (!read_matrix_from_file(&a, argv[2])) return;
       if (!read_matrix_from_file(&b, argv[3])) return;
 
-      output_matrix_result(matrix_sum(&a, &b), argv[4]);
+      begin = clock();
+      r = matrix_sum(&a, &b);
+      end = clock();
+      execution_time = (double)(end - begin) / CLOCKS_PER_SEC;
+
+      output_matrix_result(r, argv[4], execution_time);
 
       break;
     case SUBTRACT:
       if (!read_matrix_from_file(&a, argv[2])) return;
       if (!read_matrix_from_file(&b, argv[3])) return;
 
-      output_matrix_result(matrix_subtract(&a, &b), argv[4]);
+      begin = clock();
+      r = matrix_subtract(&a, &b);
+      end = clock();
+      execution_time = (double)(end - begin) / CLOCKS_PER_SEC;
+
+      output_matrix_result(r, argv[4], execution_time);
 
       break;
     case MULTIPLY:
       if (!read_matrix_from_file(&a, argv[2])) return;
       if (!read_matrix_from_file(&b, argv[3])) return;
       
-      output_matrix_result(matrix_multiply(&a, &b), argv[4]);
+      begin = clock();
+      r = matrix_multiply(&a, &b);
+      end = clock();
+      execution_time = (double)(end - begin) / CLOCKS_PER_SEC;
+
+      output_matrix_result(r, argv[4], execution_time);
 
       break;
     case TRANSPOSE:
       if (!read_matrix_from_file(&a, argv[2])) return;
 
-      output_matrix_result(matrix_transpose(&a), argv[3]);
+      begin = clock();
+      r = matrix_transpose(&a);
+      end = clock();
+      execution_time = (double)(end - begin) / CLOCKS_PER_SEC;
+
+      output_matrix_result(r, argv[3], execution_time);
 
       break;
+    case DET_LU_DEC:
     case DET:
       if (!read_matrix_from_file(&a, argv[2])) return;
 
-      numeric_result = matrix_determinant(&a);
+      begin = clock();
+      numeric_result = matrix_determinant_lu_decomposition(&a);
+      end = clock();
+      execution_time = (double)(end - begin) / CLOCKS_PER_SEC;
 
       if (numeric_result.success) {
-        printf("det = %lf", numeric_result.value);
+        printf("det = %lf\n", numeric_result.value);
+        printf("Calculation time: %lf", execution_time);
+      } else {
+        print_matrix_error(numeric_result.code);
+      }
+
+      break;
+    case DET_LAPLACE:
+      if (!read_matrix_from_file(&a, argv[2])) return;
+
+      begin = clock();
+      numeric_result = matrix_determinant_laplace(&a);
+      end = clock();
+      execution_time = (double)(end - begin) / CLOCKS_PER_SEC;
+
+      if (numeric_result.success) {
+        printf("det = %lf\n", numeric_result.value);
+        printf("Calculation time: %lf", execution_time);
       } else {
         print_matrix_error(numeric_result.code);
       }

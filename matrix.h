@@ -35,6 +35,8 @@ MatrixResult new_matrix(int rows, int cols);
 
 MatrixResult new_matrix_with_values(int rows, int cols, double values[rows][cols]);
 
+Matrix* matrix_copy(Matrix *m);
+
 MatrixResult new_identity_matrix(int n);
 
 MatrixNumericResult matrix_set(Matrix *m, int row, int col, double value);
@@ -47,7 +49,9 @@ MatrixResult matrix_subtract(Matrix *a, Matrix *b);
 
 MatrixResult matrix_multiply(Matrix *a, Matrix *b);
 
-MatrixNumericResult matrix_determinant(Matrix *m);
+MatrixNumericResult matrix_determinant_laplace(Matrix *m);
+
+MatrixNumericResult matrix_determinant_lu_decomposition(Matrix *m);
 
 MatrixResult matrix_transpose(Matrix *m);
 

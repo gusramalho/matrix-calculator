@@ -202,13 +202,13 @@ void test_matrix_multiply_2() {
     delete_matrix(result);
 }
 
-void test_determinant_2x2() {
+void test_determinant_2x2_laplace() {
     double values[2][2] = { 
         {3, 2}, 
         {5, -1}
     };
     Matrix *m = new_matrix_with_values(2, 2, values).value;
-    MatrixNumericResult result = matrix_determinant(m);
+    MatrixNumericResult result = matrix_determinant_laplace(m);
 
     assert(1 == result.success);
     assert(-13 == result.value);
@@ -217,14 +217,29 @@ void test_determinant_2x2() {
     delete_matrix(m);
 }
 
-void test_determinant_3x3() {
+void test_determinant_2x2_lu_decomposition() {
+    double values[2][2] = { 
+        {3, 2}, 
+        {5, -1}
+    };
+    Matrix *m = new_matrix_with_values(2, 2, values).value;
+    MatrixNumericResult result = matrix_determinant_lu_decomposition(m);
+
+    assert(1 == result.success);
+    assert(-13 >= result.value && result.value < -12.99);
+    assert(MATRIX_SUCCESS_CODE == result.code);
+
+    delete_matrix(m);
+}
+
+void test_determinant_3x3_laplace() {
     double values[3][3] = { 
         {4, -3, 5}, 
         {2, 1, 3}, 
         {4, 1, 0}
     };
     Matrix *m = new_matrix_with_values(3, 3, values).value;
-    MatrixNumericResult result = matrix_determinant(m);
+    MatrixNumericResult result = matrix_determinant_laplace(m);
 
     assert(1 == result.success);
     assert(-58 == result.value);
@@ -233,7 +248,23 @@ void test_determinant_3x3() {
     delete_matrix(m);
 }
 
-void test_determinant_4x4() {
+void test_determinant_3x3_lu_decomposition() {
+    double values[3][3] = { 
+        {4, -3, 5}, 
+        {2, 1, 3}, 
+        {4, 1, 0}
+    };
+    Matrix *m = new_matrix_with_values(3, 3, values).value;
+    MatrixNumericResult result = matrix_determinant_lu_decomposition(m);
+
+    assert(1 == result.success);
+    assert(-58 == result.value);
+    assert(MATRIX_SUCCESS_CODE == result.code);
+
+    delete_matrix(m);
+}
+
+void test_determinant_4x4_laplace() {
     double values[4][4] = { 
         {2, 3, -1, 2}, 
         {0, 4, -3, 5}, 
@@ -242,7 +273,7 @@ void test_determinant_4x4() {
     };
 
     Matrix *m = new_matrix_with_values(4, 4, values).value;
-    MatrixNumericResult result = matrix_determinant(m);
+    MatrixNumericResult result = matrix_determinant_laplace(m);
 
     assert(1 == result.success);
     assert(-119 == result.value);
@@ -251,9 +282,25 @@ void test_determinant_4x4() {
     delete_matrix(m);
 }
 
-void test_determinant_5x5() {
-    MatrixResultCode result_code;
+void test_determinant_4x4_lu_decomposition() {
+    double values[4][4] = { 
+        {2, 3, -1, 2}, 
+        {0, 4, -3, 5}, 
+        {1, 2, 1, 3}, 
+        {0, 4, 1, 0}
+    };
 
+    Matrix *m = new_matrix_with_values(4, 4, values).value;
+    MatrixNumericResult result = matrix_determinant_lu_decomposition(m);
+
+    assert(1 == result.success);
+    assert(-119 == result.value);
+    assert(MATRIX_SUCCESS_CODE == result.code);
+
+    delete_matrix(m);
+}
+
+void test_determinant_5x5_laplace() {
     double values[5][5] = { 
         {1, 0, 0, 3, 1}, 
         {0, 0, 0, 2, 0}, 
@@ -263,7 +310,7 @@ void test_determinant_5x5() {
     };
 
     Matrix *m = new_matrix_with_values(5, 5, values).value;
-    MatrixNumericResult result = matrix_determinant(m);
+    MatrixNumericResult result = matrix_determinant_laplace(m);
 
     assert(1 == result.success);
     assert(6 == result.value);
@@ -272,8 +319,26 @@ void test_determinant_5x5() {
     delete_matrix(m);
 }
 
-void test_determinant_6x6() {
-    MatrixResultCode result_code;
+void test_determinant_5x5_lu_decomposition() {
+    double values[5][5] = { 
+        {1, 0, 0, 3, 1}, 
+        {0, 0, 0, 2, 0}, 
+        {-1, 0, 2, 1, -2}, 
+        {3, 1, 0, -2, 2}, 
+        {2, 0, 1, 1, 0}
+    };
+
+    Matrix *m = new_matrix_with_values(5, 5, values).value;
+    MatrixNumericResult result = matrix_determinant_lu_decomposition(m);
+
+    assert(1 == result.success);
+    assert(6 == result.value);
+    assert(MATRIX_SUCCESS_CODE == result.code);
+
+    delete_matrix(m);
+}
+
+void test_determinant_6x6_laplace() {
     double values[6][6] = { 
         {-2, -1, 1, 3, 5, 7}, 
         {0, 2, 1, 3, 2, 4}, 
@@ -284,10 +349,30 @@ void test_determinant_6x6() {
     };
 
     Matrix *m = new_matrix_with_values(6, 6, values).value;
-    MatrixNumericResult result = matrix_determinant(m);
+    MatrixNumericResult result = matrix_determinant_laplace(m);
 
     assert(1 == result.success);
     assert(-24 == result.value);
+    assert(MATRIX_SUCCESS_CODE == result.code);
+
+    delete_matrix(m);
+}
+
+void test_determinant_6x6_lu_decomposition() {
+    double values[6][6] = { 
+        {-2, -1, 1, 3, 5, 7}, 
+        {0, 2, 1, 3, 2, 4}, 
+        {0, 0, 3, -1, 4, 8}, 
+        {0, 0, 0, 1, 2, 3}, 
+        {0, 0, 0, 1, 5, 4}, 
+        {0, 0, 0, 0, 4, 2}, 
+    };
+
+    Matrix *m = new_matrix_with_values(6, 6, values).value;
+    MatrixNumericResult result = matrix_determinant_lu_decomposition(m);
+
+    assert(1 == result.success);
+    assert(-24 >= result.value && result.value < -23.99);
     assert(MATRIX_SUCCESS_CODE == result.code);
 
     delete_matrix(m);
@@ -303,11 +388,16 @@ int main() {
     test_matrix_subtract();
     test_matrix_multiply_1();
     test_matrix_multiply_2();
-    test_determinant_2x2();
-    test_determinant_3x3();
-    test_determinant_4x4();
-    test_determinant_5x5();
-    test_determinant_6x6();
+    test_determinant_2x2_laplace();
+    test_determinant_2x2_lu_decomposition();
+    test_determinant_3x3_laplace();
+    test_determinant_3x3_lu_decomposition();
+    test_determinant_4x4_laplace();
+    test_determinant_4x4_lu_decomposition();
+    test_determinant_5x5_laplace();
+    test_determinant_5x5_lu_decomposition();
+    test_determinant_6x6_laplace();
+    test_determinant_6x6_lu_decomposition();
 
     printf("All tests passed successfully.");
 }
